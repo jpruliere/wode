@@ -1,6 +1,13 @@
 # Wode
 
-Un PoC de binary (qui n'a rien de binaire en fait) qui remplace tous les "n" par des "w" (majuscules également) dans les payloads renvoyés par une app Express. Je sais, ça n'a aucun sens, c'est juste un PoC.
+Un PoC de binary qui remplace tous les "n" par des "w" (majuscules également) dans les payloads renvoyés par une app Express. Je sais, ça n'a aucun sens, c'est juste un PoC.
+
+## Changelog
+
+### 2.0.0
+
+- Ne nécessite plus d'exporter le serveur dans le point d'entrée spécifié (le serveur est récupéré via un piège sur `http.createServer`)
+- Réutilise le même serveur plutôt que de fermer celui créé pour en rouvrir un
 
 ## Installation
 
@@ -20,15 +27,3 @@ Pour utiliser Wode, modifiez simplement le script start dans votre `package.json
   }
 }
 ```
-
-L'unique contrainte pour que tout roule, c'est que votre point d'entrée exporte l'instance de `Server` retournée par `app.listen()`
-
-```js
-// la modif à effectuer dans myServer.js
-module.exports = app.listen(port)
-
-// si la création du serveur est async, ça marche aussi
-module.exports = createServerAsync().then(app => app.listen(port))
-
-```
-

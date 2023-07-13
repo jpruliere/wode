@@ -1,35 +1,39 @@
 #!/usr/bin/env node
-const express = require('express')
 const { join } = require('path')
-const { Server } = require('http')
+const http = require('http')
 
-const gateway = express()
+/* Trap on http.createServer to get the server instance */
 
-const theWodder = (req, res, next) => {
-  const send = res.send.bind(res)
+let serverInstance
 
-  res.send = async (payload) => {
-    send(payload.replaceAll('n', 'w').replaceAll('N', 'W'))
-  }
+const vanillaCS = http.createServer.bind(http)
 
-  next()
+http.createServer = function (...args) {
+  serverInstance = vanillaCS(...args)
+
+  return serverInstance
 }
 
-gateway.use(theWodder)
+const theWodder = (app) => {
+  const send = app.response.send
+
+  app.response.send = function (payload, ...args) {
+    return send.bind(this)(payload.replaceAll('n', 'w').replaceAll('N', 'W'), ...args)
+  }
+
+  return app
+}
 
 const serverFile = process.argv[2]
 
 ;(async () => {
   try {
-    const server = await require(join(process.cwd(), serverFile))
-    if (!(server instanceof Server)) throw new Error('nope, that wont work')
+    await require(join(process.cwd(), serverFile))
+    if (!(serverInstance instanceof http.Server)) throw new Error('Server was not created via http.createServer')
 
-    const { port } = server.address()
-    const app = server.listeners('request')[0]
-    server.close()
-    gateway.use(app)
-
-    gateway.listen(port, () => console.log(`Server ruwwiwg lul`))
+    const app = serverInstance.listeners('request')[0]
+    serverInstance.off('request', app)
+    serverInstance.on('request', theWodder(app))
   } catch (e) {
     console.error(e)
   }
